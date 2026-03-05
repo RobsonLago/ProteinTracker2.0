@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#0c0c0e"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="NutriPro"/>
+  <title>NutriPro</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+<div id="toasts"></div>
+
+<!-- Scanner -->
+<div id="scanner-overlay" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-head">
+      <span>Código de Barras</span>
+      <button onclick="stopScanner()" class="icon-btn">✕</button>
+    </div>
+    <div id="scanner" style="width:100%;height:220px;background:#000"></div>
+  </div>
+</div>
+
+<!-- Install banner -->
+<div id="install-banner" class="install-banner hidden">
+  <div>
+    <strong>Instalar NutriPro</strong>
+    <p>Acesse direto da tela inicial</p>
+  </div>
+  <button onclick="installApp()" class="btn-install">Instalar</button>
+  <button onclick="dismissInstall()" class="icon-btn">✕</button>
+</div>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <span>NutriPro</span>
+    </div>
+    <div id="topbar-meta" class="topbar-meta"></div>
+  </div>
+</header>
+
+<!-- PAGES -->
+<main class="app">
+
+  <!-- HOME -->
+  <section class="screen active" id="screen-home">
+    <div class="scroll-area">
+      <div class="greeting" id="greeting"></div>
+
+      <div class="calring-wrap">
+        <svg class="calring" viewBox="0 0 200 200">
+          <circle class="cr-track" cx="100" cy="100" r="84"/>
+          <circle class="cr-fill" cx="100" cy="100" r="84" id="cr-fill"
+            stroke-dasharray="527.8" stroke-dashoffset="527.8"/>
+        </svg>
+        <div class="calring-inner">
+          <div class="cri-val" id="home-cal">0</div>
+          <div class="cri-unit">kcal</div>
+          <div class="cri-label" id="home-pct">— meta</div>
+        </div>
+      </div>
+
+      <div class="pill-row">
+        <div class="pill">
+          <div class="pill-val prot-col" id="hp-prot">0g</div>
+          <div class="pill-name">Proteína</div>
+        </div>
+        <div class="pill-divider"></div>
+        <div class="pill">
+          <div class="pill-val carb-col" id="hp-carb">0g</div>
+          <div class="pill-name">Carbs</div>
+        </div>
+        <div class="pill-divider"></div>
+        <div class="pill">
+          <div class="pill-val fat-col" id="hp-fat">0g</div>
+          <div class="pill-name">Gordura</div>
+        </div>
+      </div>
+
+      <div class="water-strip">
+        <div class="ws-left">
+          <span class="ws-icon">💧</span>
+          <div>
+            <div class="ws-val"><span id="ws-drunk">0</span><span class="ws-unit"> ml</span></div>
+            <div class="ws-meta" id="ws-meta">Meta não definida</div>
+          </div>
+        </div>
+        <div class="ws-right">
+          <button class="tap-btn" onclick="addWaterAmount(200)">+200</button>
+          <button class="tap-btn" onclick="addWaterAmount(300)">+300</button>
+          <button class="tap-btn" onclick="addWaterAmount(500)">+500</button>
+        </div>
+      </div>
+      <div class="thin-track"><div id="ws-bar" class="thin-fill water-fill" style="width:0%"></div></div>
+
+      <div class="section-head">
+        <span class="section-title">Hoje</span>
+        <button class="text-btn" onclick="goTo('refeicoes')">ver tudo →</button>
+      </div>
+      <ul id="home-meals" class="home-meal-list"></ul>
+    </div>
+  </section>
+
+  <!-- REFEIÇÕES -->
+  <section class="screen" id="screen-refeicoes">
+    <div class="scroll-area">
+      <div class="page-head"><h1>Refeições</h1></div>
+
+      <div class="total-bar">
+        <div class="tb-main">
+          <span id="tb-cal">0</span>
+          <span class="tb-unit">kcal</span>
+        </div>
+        <div class="tb-macros">
+          <span class="prot-col" id="tb-prot">P 0g</span>
+          <span class="carb-col" id="tb-carb">C 0g</span>
+          <span class="fat-col"  id="tb-fat">G 0g</span>
+        </div>
+        <div class="seg-track">
+          <div id="seg-p" class="seg-fill prot-fill" style="width:0%"></div>
+          <div id="seg-c" class="seg-fill carb-fill" style="width:0%"></div>
+          <div id="seg-f" class="seg-fill fat-fill"  style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="add-card">
+        <div class="form-row">
+          <div class="field">
+            <label>Categoria</label>
+            <select id="catFilter"><option value="">Todas</option></select>
+          </div>
+          <div class="field">
+            <label>Buscar</label>
+            <input id="foodSearch" type="text" placeholder="Nome…"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Alimento</label>
+          <select id="foodSelect"></select>
+        </div>
+        <div class="form-row align-end">
+          <div class="field" style="flex:1;margin-bottom:0">
+            <label>Quantidade</label>
+            <div class="inp-unit">
+              <input id="gramas" type="number" inputmode="decimal" placeholder="0"/>
+              <span>g</span>
+            </div>
+          </div>
+          <button class="btn-green" onclick="addFood()">Adicionar</button>
+        </div>
+        <button class="btn-outline mt12" onclick="startScanner()">📷 Scanner de código de barras</button>
+      </div>
+
+      <ul id="meal-list" class="meal-list"></ul>
+    </div>
+  </section>
+
+  <!-- ÁGUA -->
+  <section class="screen" id="screen-agua">
+    <div class="scroll-area">
+      <div class="page-head"><h1>Hidratação</h1></div>
+
+      <div class="water-hero">
+        <div class="wh-num">
+          <span id="wh-drunk">0</span><span class="wh-unit"> ml</span>
+        </div>
+        <div class="wh-goal">de <span id="wh-goal">—</span> ml</div>
+        <div class="wh-pct-pill" id="wh-pct">0%</div>
+      </div>
+
+      <div class="fat-track mt20">
+        <div id="wh-bar" class="fat-fill water-fat" style="width:0%"></div>
+      </div>
+
+      <div class="section-head mt24">
+        <span class="section-title">Adição rápida</span>
+      </div>
+      <div class="water-chips">
+        <button class="chip" onclick="addWaterAmount(150)">150 ml</button>
+        <button class="chip" onclick="addWaterAmount(200)">200 ml</button>
+        <button class="chip" onclick="addWaterAmount(250)">250 ml</button>
+        <button class="chip" onclick="addWaterAmount(300)">300 ml</button>
+        <button class="chip" onclick="addWaterAmount(500)">500 ml</button>
+        <button class="chip minus" onclick="addWaterAmount(-200)">− 200 ml</button>
+      </div>
+
+      <div class="section-head mt24">
+        <span class="section-title">Editar valor</span>
+      </div>
+      <div class="form-row align-end">
+        <div class="field" style="flex:1;margin-bottom:0">
+          <label>Total consumido</label>
+          <div class="inp-unit">
+            <input id="water-input" type="number" inputmode="decimal" placeholder="0"/>
+            <span>ml</span>
+          </div>
+        </div>
+        <button class="btn-green" onclick="setWaterManual()">Salvar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- EVOLUÇÃO -->
+  <section class="screen" id="screen-evolucao">
+    <div class="scroll-area">
+      <div class="page-head"><h1>Evolução</h1></div>
+
+      <div class="chart-card">
+        <div class="chart-label">Peso — últimos registros</div>
+        <canvas id="weightChart"></canvas>
+        <div class="form-row align-end mt16">
+          <div class="field" style="flex:1;margin-bottom:0">
+            <label>Novo peso</label>
+            <div class="inp-unit">
+              <input id="newWeight" type="number" inputmode="decimal" placeholder="0.0" step="0.1"/>
+              <span>kg</span>
+            </div>
+          </div>
+          <button class="btn-green" onclick="addWeight()">Registrar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PERFIL -->
+  <section class="screen" id="screen-perfil">
+    <div class="scroll-area">
+      <div class="page-head"><h1>Perfil</h1></div>
+
+      <div class="form-card">
+        <div class="form-row">
+          <div class="field">
+            <label>Peso</label>
+            <div class="inp-unit"><input id="peso" type="number" inputmode="decimal" placeholder="0"/><span>kg</span></div>
+          </div>
+          <div class="field">
+            <label>Altura</label>
+            <div class="inp-unit"><input id="altura" type="number" inputmode="decimal" placeholder="0"/><span>cm</span></div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Idade</label>
+            <div class="inp-unit"><input id="idade" type="number" inputmode="numeric" placeholder="0"/><span>anos</span></div>
+          </div>
+          <div class="field">
+            <label>Sexo</label>
+            <select id="sexo">
+              <option value="m">Masculino</option>
+              <option value="f">Feminino</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-green mt8" onclick="calcular()">Calcular metabolismo</button>
+      </div>
+
+      <div id="results-block" class="hidden">
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="ri-label">TMB</div>
+            <div id="r-tmb" class="ri-val">—</div>
+          </div>
+          <div class="result-item accent-item">
+            <div class="ri-label">Meta calórica</div>
+            <div id="r-cal" class="ri-val">—</div>
+          </div>
+          <div class="result-item">
+            <div class="ri-label">Proteína diária</div>
+            <div id="r-prot" class="ri-val">—</div>
+          </div>
+          <div class="result-item">
+            <div class="ri-label">Água diária</div>
+            <div id="r-agua" class="ri-val">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- TABBAR -->
+<nav class="tabbar">
+  <button class="tab active" id="tab-home" onclick="goTo('home')">
+    <svg viewBox="0 0 24 24"><path d="M3 12L12 3l9 9"/><path d="M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg>
+    <span>Início</span>
+  </button>
+  <button class="tab" id="tab-refeicoes" onclick="goTo('refeicoes')">
+    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <span>Refeições</span>
+  </button>
+  <button class="tab" id="tab-agua" onclick="goTo('agua')">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6 8 4 12 4 15a8 8 0 0016 0c0-3-2-7-8-13z"/></svg>
+    <span>Água</span>
+  </button>
+  <button class="tab" id="tab-evolucao" onclick="goTo('evolucao')">
+    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <span>Evolução</span>
+  </button>
+  <button class="tab" id="tab-perfil" onclick="goTo('perfil')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    <span>Perfil</span>
+  </button>
+</nav>
+
+<!-- Scripts at bottom — after DOM is ready -->
+<script src="foods.js"></script>
+<!-- Chart.js loaded inline-async to not block if offline -->
+<script>
+(function() {
+  var s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+  s.onload = function() { window._chartReady = true; if(window._appReady) initChart(); };
+  s.onerror = function() { console.warn('Chart.js failed to load'); window._chartReady = false; if(window._appReady) initChart(); };
+  document.head.appendChild(s);
+})();
+</script>
+<script src="app.js"></script>
+</body>
+</html>
