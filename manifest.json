@@ -1,0 +1,8 @@
+{
+  "name": "Nutri Tracker Pro",
+  "short_name": "NutriPro",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#10b981"
+}

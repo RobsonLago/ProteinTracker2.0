@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nutri Tracker Pro</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+</head>
+<body>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- Scanner overlay -->
+<div id="scanner-overlay" class="hidden overlay">
+  <div class="scanner-box">
+    <div class="scanner-header">
+      <span>Aponte para o código de barras</span>
+      <button onclick="stopScanner()" class="btn-close-scanner">✕</button>
+    </div>
+    <div id="scanner"></div>
+  </div>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">🥗</span>
+      <div>
+        <h1>Nutri<span>Tracker</span></h1>
+        <p class="logo-sub">Monitoramento nutricional</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- ── Perfil ─────────────────────────────────── -->
+  <section class="card" id="section-perfil">
+    <div class="card-label">01 — Perfil</div>
+    <h2 class="card-title">Dados Pessoais</h2>
+    <div class="grid-2">
+      <div class="field">
+        <label>Peso</label>
+        <input id="peso" type="number" placeholder="kg" min="1" />
+      </div>
+      <div class="field">
+        <label>Altura</label>
+        <input id="altura" type="number" placeholder="cm" min="1" />
+      </div>
+      <div class="field">
+        <label>Idade</label>
+        <input id="idade" type="number" placeholder="anos" min="1" />
+      </div>
+      <div class="field">
+        <label>Sexo</label>
+        <select id="sexo">
+          <option value="m">Masculino</option>
+          <option value="f">Feminino</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="calcular()">Calcular Metabolismo</button>
+
+    <div id="results-card" class="results-grid hidden">
+      <div class="result-item">
+        <span class="result-label">TMB</span>
+        <span id="val-tmb" class="result-value">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">Meta Calórica</span>
+        <span id="val-cal" class="result-value accent">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">Proteína diária</span>
+        <span id="val-prot" class="result-value">—</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">Água diária</span>
+        <span id="val-agua" class="result-value">—</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Progresso ──────────────────────────────── -->
+  <section class="card" id="section-progresso">
+    <div class="card-label">02 — Hoje</div>
+    <h2 class="card-title">Progresso do Dia</h2>
+    <div class="progress-group">
+      <div class="progress-row">
+        <span class="prog-name">Calorias</span>
+        <span id="prog-cal-label" class="prog-label">0 / 0 kcal</span>
+      </div>
+      <div class="progress-track">
+        <div id="prog-cal-bar" class="progress-bar bar-cal" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="progress-group">
+      <div class="progress-row">
+        <span class="prog-name">Proteínas</span>
+        <span id="prog-prot-label" class="prog-label">0 / 0 g</span>
+      </div>
+      <div class="progress-track">
+        <div id="prog-prot-bar" class="progress-bar bar-prot" style="width:0%"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Refeições ──────────────────────────────── -->
+  <section class="card" id="section-refeicoes">
+    <div class="card-label">03 — Refeições</div>
+    <h2 class="card-title">Adicionar Alimento</h2>
+
+    <div class="field">
+      <label>Buscar alimento</label>
+      <input id="foodSearch" type="text" placeholder="Digite o nome..." />
+    </div>
+    <div class="field">
+      <label>Alimento</label>
+      <select id="foodSelect"></select>
+    </div>
+    <div class="field">
+      <label>Quantidade</label>
+      <input id="gramas" type="number" placeholder="Gramas (g)" min="1" />
+    </div>
+    <button class="btn-primary" onclick="addFood()">+ Adicionar</button>
+    <button class="btn-secondary" onclick="startScanner()">📷 Scanner de código de barras</button>
+
+    <ul id="lista" class="meal-list"></ul>
+
+    <div class="macro-panel">
+      <div class="macro-total-row">
+        <span class="macro-total-label">Total</span>
+        <span id="totalCal" class="macro-total-value">0 kcal</span>
+      </div>
+      <div class="macro-row">
+        <div class="macro-item">
+          <span class="macro-label prot-color">Proteínas</span>
+          <span id="totalProt" class="macro-value">0 g</span>
+        </div>
+        <div class="macro-item">
+          <span class="macro-label carb-color">Carboidratos</span>
+          <span id="totalCarb" class="macro-value">0 g</span>
+        </div>
+        <div class="macro-item">
+          <span class="macro-label fat-color">Gorduras</span>
+          <span id="totalFat" class="macro-value">0 g</span>
+        </div>
+      </div>
+      <div class="macro-bar-track">
+        <div id="bar-prot" class="macro-bar-seg prot-bg" style="width:0%"></div>
+        <div id="bar-carb" class="macro-bar-seg carb-bg" style="width:0%"></div>
+        <div id="bar-fat" class="macro-bar-seg fat-bg" style="width:0%"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Peso ──────────────────────────────────── -->
+  <section class="card" id="section-peso">
+    <div class="card-label">04 — Evolução</div>
+    <h2 class="card-title">Registro de Peso</h2>
+    <canvas id="pesoChart" height="110"></canvas>
+    <div class="weight-input-row">
+      <input id="newWeight" type="number" placeholder="Novo peso (kg)" min="20" max="300" step="0.1" />
+      <button class="btn-primary" onclick="addWeight()">Registrar</button>
+    </div>
+  </section>
+
+  <!-- ── Água ──────────────────────────────────── -->
+  <section class="card" id="section-agua">
+    <div class="card-label">05 — Hidratação</div>
+    <h2 class="card-title">Checklist de Água</h2>
+    <div class="water-meta">
+      <span>Meta: <strong id="water-total">—</strong></span>
+      <span id="water-count" class="water-count-badge">Calcule o perfil primeiro</span>
+    </div>
+    <div id="waterChecklist" class="water-grid"></div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <p>Nutri Tracker Pro &copy; 2025 &mdash; Feito para sua saúde 💚</p>
+</footer>
+
+<script src="foods.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
