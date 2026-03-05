@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nutri Tracker Pro</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- Scanner overlay -->
+<div id="scanner-overlay" class="overlay hidden">
+  <div class="scanner-box">
+    <div class="scanner-header">
+      <span>Aponte para o código de barras</span>
+      <button onclick="stopScanner()" class="btn-close">✕</button>
+    </div>
+    <div id="scanner"></div>
+  </div>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <div class="wrap header-inner">
+    <div class="logo">
+      <div class="logo-mark">N</div>
+      <div>
+        <h1>Nutri<span>Tracker</span> <em>Pro</em></h1>
+        <p>Controle nutricional diário</p>
+      </div>
+    </div>
+    <div class="header-date" id="header-date"></div>
+  </div>
+</header>
+
+<div class="wrap main">
+
+  <!-- ── 01 Perfil ───────────────────────────────────────────────────────── -->
+  <section class="card" style="--d:0">
+    <div class="card-eyebrow">01 · Perfil</div>
+    <h2>Dados Pessoais</h2>
+
+    <div class="grid-4">
+      <div class="field">
+        <label>Peso</label>
+        <div class="input-unit"><input id="peso" type="number" placeholder="0" min="1"/><span>kg</span></div>
+      </div>
+      <div class="field">
+        <label>Altura</label>
+        <div class="input-unit"><input id="altura" type="number" placeholder="0" min="1"/><span>cm</span></div>
+      </div>
+      <div class="field">
+        <label>Idade</label>
+        <div class="input-unit"><input id="idade" type="number" placeholder="0" min="1"/><span>anos</span></div>
+      </div>
+      <div class="field">
+        <label>Sexo</label>
+        <select id="sexo">
+          <option value="m">Masculino</option>
+          <option value="f">Feminino</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="calcular()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Calcular Metabolismo
+    </button>
+
+    <div id="results-card" class="results-grid hidden">
+      <div class="result-tile">
+        <span class="rtile-label">TMB</span>
+        <span id="val-tmb" class="rtile-val">—</span>
+      </div>
+      <div class="result-tile accent-tile">
+        <span class="rtile-label">Meta Calórica</span>
+        <span id="val-cal" class="rtile-val">—</span>
+      </div>
+      <div class="result-tile">
+        <span class="rtile-label">Proteína diária</span>
+        <span id="val-prot" class="rtile-val">—</span>
+      </div>
+      <div class="result-tile">
+        <span class="rtile-label">Água diária</span>
+        <span id="val-agua" class="rtile-val">—</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 02 Progresso ─────────────────────────────────────────────────────── -->
+  <section class="card" style="--d:1">
+    <div class="card-eyebrow">02 · Hoje</div>
+    <h2>Progresso do Dia</h2>
+
+    <div class="prog-block">
+      <div class="prog-head">
+        <span class="prog-name">Calorias</span>
+        <span id="prog-cal-label" class="prog-val">0 / 0 kcal</span>
+      </div>
+      <div class="prog-track"><div id="prog-cal-bar" class="prog-bar cal-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="prog-block">
+      <div class="prog-head">
+        <span class="prog-name">Proteínas</span>
+        <span id="prog-prot-label" class="prog-val">0 / 0 g</span>
+      </div>
+      <div class="prog-track"><div id="prog-prot-bar" class="prog-bar prot-bar" style="width:0%"></div></div>
+    </div>
+  </section>
+
+  <!-- ── 03 Refeições ─────────────────────────────────────────────────────── -->
+  <section class="card" style="--d:2">
+    <div class="card-eyebrow">03 · Refeições</div>
+    <h2>Adicionar Alimento</h2>
+
+    <div class="food-filters">
+      <div class="field">
+        <label>Categoria</label>
+        <select id="catFilter">
+          <option value="">Todas as categorias</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Buscar</label>
+        <input id="foodSearch" type="text" placeholder="Nome do alimento..." />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Alimento</label>
+      <select id="foodSelect"></select>
+    </div>
+
+    <div class="food-add-row">
+      <div class="field grow">
+        <label>Quantidade</label>
+        <div class="input-unit">
+          <input id="gramas" type="number" placeholder="0" min="1" />
+          <span>g</span>
+        </div>
+      </div>
+      <button class="btn-primary compact" onclick="addFood()">Adicionar</button>
+    </div>
+
+    <button class="btn-ghost" onclick="startScanner()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3m0 4h4v-4m-4 0h-3v4"/></svg>
+      Scanner de Código de Barras
+    </button>
+
+    <ul id="lista" class="meal-list"></ul>
+
+    <div class="macro-panel">
+      <div class="macro-top">
+        <span class="macro-label-main">Total consumido</span>
+        <span id="totalCal" class="macro-cal-val">0 kcal</span>
+      </div>
+      <div class="macro-grid">
+        <div class="macro-col prot">
+          <span id="totalProt">0 g</span>
+          <span>Proteínas</span>
+          <span id="lbl-prot" class="macro-pct">0%</span>
+        </div>
+        <div class="macro-col carb">
+          <span id="totalCarb">0 g</span>
+          <span>Carboidratos</span>
+          <span id="lbl-carb" class="macro-pct">0%</span>
+        </div>
+        <div class="macro-col fat">
+          <span id="totalFat">0 g</span>
+          <span>Gorduras</span>
+          <span id="lbl-fat" class="macro-pct">0%</span>
+        </div>
+      </div>
+      <div class="macro-seg-track">
+        <div id="bar-prot" class="seg prot-seg" style="width:0%"></div>
+        <div id="bar-carb" class="seg carb-seg" style="width:0%"></div>
+        <div id="bar-fat"  class="seg fat-seg"  style="width:0%"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 04 Peso ──────────────────────────────────────────────────────────── -->
+  <section class="card" style="--d:3">
+    <div class="card-eyebrow">04 · Evolução</div>
+    <h2>Registro de Peso</h2>
+    <div class="chart-wrap">
+      <canvas id="pesoChart" height="120"></canvas>
+    </div>
+    <div class="weight-row">
+      <div class="input-unit grow">
+        <input id="newWeight" type="number" placeholder="Novo peso" min="20" max="300" step="0.1"/>
+        <span>kg</span>
+      </div>
+      <button class="btn-primary compact" onclick="addWeight()">Registrar</button>
+    </div>
+  </section>
+
+  <!-- ── 05 Água ──────────────────────────────────────────────────────────── -->
+  <section class="card" style="--d:4">
+    <div class="card-eyebrow">05 · Hidratação</div>
+    <h2>Controle de Água</h2>
+
+    <div class="water-status">
+      <div class="water-nums">
+        <span id="water-consumed" class="water-big">0 ml</span>
+        <span class="water-sep">/</span>
+        <span id="water-meta-goal" class="water-goal">— ml</span>
+      </div>
+      <span id="water-pct" class="water-badge">0%</span>
+    </div>
+
+    <div class="prog-track water-track">
+      <div id="water-prog-bar" class="prog-bar" style="width:0%; background: var(--water)"></div>
+    </div>
+
+    <!-- Quick-add buttons -->
+    <div class="water-quick">
+      <span class="quick-label">Adicionar</span>
+      <div class="quick-btns">
+        <button class="btn-water" onclick="addWaterAmount(150)">+150 ml</button>
+        <button class="btn-water" onclick="addWaterAmount(200)">+200 ml</button>
+        <button class="btn-water" onclick="addWaterAmount(300)">+300 ml</button>
+        <button class="btn-water" onclick="addWaterAmount(500)">+500 ml</button>
+        <button class="btn-water remove" onclick="addWaterAmount(-200)">−200 ml</button>
+      </div>
+    </div>
+
+    <!-- Manual edit -->
+    <div class="water-manual">
+      <span class="quick-label">Editar manualmente</span>
+      <div class="water-row">
+        <div class="input-unit grow">
+          <input id="water-input" type="number" placeholder="Total em ml" min="0" step="50"/>
+          <span>ml</span>
+        </div>
+        <button class="btn-primary compact" onclick="setWaterManual()">Salvar</button>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /wrap -->
+
+<footer class="footer">
+  <div class="wrap">Nutri Tracker Pro &copy; 2025 · Feito para sua saúde 💚</div>
+</footer>
+
+<script src="foods.js"></script>
+<script src="app.js"></script>
+<script>
+  // date in header
+  const d = new Date();
+  $("header-date").textContent = d.toLocaleDateString("pt-BR", { weekday:"long", day:"numeric", month:"long" });
+</script>
+</body>
+</html>
